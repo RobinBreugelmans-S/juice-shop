@@ -2,23 +2,35 @@ name: Generate CycloneDX SBOM
 
 on:
   push:
-    branches: [master]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  security-scan:
+  generate-sbom:
+    name: Generate SBOM
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install Syft
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Generate SBOM for Docker Hub Image with Syft
-        run: syft docker:bkimminich/juice-shop -o cyclonedx-json > juice-shop-sbom.json
-
-      - name: Upload SBOM and Scan Results as Artifacts
-        uses: actions/upload-artifact@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          name: Reports
-          path: |
-            juice-shop-sbom.json
+          node-version: "20"
+
+      - name: Install CycloneDX CLI
+        run: npm install -g @cyclonedx/cyclonedx-npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate SBOM
+        run: cyclonedx-npm --output-file sbom.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
