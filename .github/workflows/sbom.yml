@@ -1,36 +1,30 @@
-# name: Generate CycloneDX SBOM
+name: Generate SBOM
 
-# on:
-#   push:
-#     branches:
-#       - master
-#   workflow_dispatch:
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
 
-# jobs:
-#   generate-sbom:
-#     name: Generate SBOM
-#     runs-on: ubuntu-latest
+jobs:
+  sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
 
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-#       - name: Set up Node.js
-#         uses: actions/setup-node@v3
-#         with:
-#           node-version: "20"
+      - name: Install Syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 
-#       - name: Install CycloneDX CLI
-#         run: npm install -g @cyclonedx/cyclonedx-npm
+      - name: Generate CycloneDX SBOM
+        run: |
+          syft dir:. -o cyclonedx-json > sbom.json
 
-#       - name: Install dependencies
-#         run: npm install
-
-#       - name: Generate SBOM
-#         run: cyclonedx-npm --output-file sbom.json
-
-#       - name: Upload SBOM artifact
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: sbom
-#           path: sbom.json
+      - name: Upload CycloneDX SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
