@@ -1,24 +1,32 @@
-name: "CodeQL"
+name: SAST CodeQL
 
 on:
   push:
     branches:
-      - master
-  workflow_dispatch:
+     - master
 
 jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
     permissions:
-      security-events: write
       actions: read
-    steps:
-      - uses: AppThreat/sast-scan-action@master
-        with:
-          type: "python"
+      contents: read
+      security-events: write
 
-      - uses: actions/upload-artifact@v4
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript' ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
         with:
-          name: reports
-          path: reports
+          languages: ${{ matrix.language }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2 
